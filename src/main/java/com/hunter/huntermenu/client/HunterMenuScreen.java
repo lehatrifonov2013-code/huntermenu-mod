@@ -1,7 +1,7 @@
 package com.hunter.huntermenu.client;
 
 import com.hunter.huntermenu.quest.HunterQuest;
-import com.hunter.huntermenu.quest.HunterQuestAttachment.GunStats;
+import com.hunter.huntermenu.quest.HunterQuestAttachment.QuestProgress.GunStats;
 import com.hunter.huntermenu.quest.HunterQuestAttachment.QuestProgress;
 import com.hunter.huntermenu.quest.HunterQuestRegistry;
 import net.minecraft.client.gui.GuiGraphics;
