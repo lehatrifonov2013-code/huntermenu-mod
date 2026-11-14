@@ -157,9 +157,13 @@ public class HunterMenuScreen extends Screen {
         }
     }
 
-    private String getDisplayName(String id) {
+       private String getDisplayName(String id) {
         if (id.startsWith("tacz:")) {
             return id.substring(5).replace('_', ' ').toUpperCase();
+        }
+        if (id.startsWith("lrtactical:")) {
+            String base = id.substring(11);
+            return base.substring(0, 1).toUpperCase() + base.substring(1).replace('_', ' ');
         }
         if (id.startsWith("alexsmobs:")) {
             String base = id.substring(10);
@@ -174,11 +178,25 @@ public class HunterMenuScreen extends Screen {
 
     private ItemStack getStackForDisplay(String id, boolean isWeapon) {
         if (isWeapon && id.startsWith("tacz:")) {
-            ItemStack gunStack = new ItemStack(BuiltInRegistries.ITEM.get(ResourceLocation.parse("tacz:modern_kinetic_gun")));
-            CompoundTag tag = new CompoundTag();
-            tag.putString("GunId", id);
-            gunStack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
-            return gunStack;
+            ResourceLocation gunItemLoc = ResourceLocation.parse("tacz:modern_kinetic_gun");
+            if (BuiltInRegistries.ITEM.containsKey(gunItemLoc)) {
+                ItemStack stack = new ItemStack(BuiltInRegistries.ITEM.get(gunItemLoc));
+                CompoundTag tag = new CompoundTag();
+                tag.putString("GunId", id);
+                stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
+                return stack;
+            }
+        }
+
+        if (isWeapon && id.startsWith("lrtactical:")) {
+            ResourceLocation meleeItemLoc = ResourceLocation.parse("lrtactical:melee");
+            if (BuiltInRegistries.ITEM.containsKey(meleeItemLoc)) {
+                ItemStack stack = new ItemStack(BuiltInRegistries.ITEM.get(meleeItemLoc));
+                CompoundTag tag = new CompoundTag();
+                tag.putString("MeleeWeaponId", id.substring(11));
+                stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
+                return stack;
+            }
         }
 
         if (!isWeapon && id.contains(":")) {
@@ -186,11 +204,12 @@ public class HunterMenuScreen extends Screen {
             if (BuiltInRegistries.ITEM.containsKey(eggId)) {
                 return new ItemStack(BuiltInRegistries.ITEM.get(eggId));
             }
+            return new ItemStack(BuiltInRegistries.ITEM.get(ResourceLocation.parse("minecraft:egg")));
         }
 
-        ResourceLocation itemLoc = ResourceLocation.tryParse(id);
-        if (itemLoc != null && BuiltInRegistries.ITEM.containsKey(itemLoc)) {
-            return new ItemStack(BuiltInRegistries.ITEM.get(itemLoc));
+        ResourceLocation loc = ResourceLocation.tryParse(id);
+        if (loc != null && BuiltInRegistries.ITEM.containsKey(loc)) {
+            return new ItemStack(BuiltInRegistries.ITEM.get(loc));
         }
         return ItemStack.EMPTY;
     }
