@@ -1,30 +1,44 @@
-name: Build NeoForge Mod
+package com.hunter.huntermenu.client;
 
-on:
-  push:
-    branches: [ main, master ]
-  workflow_dispatch:
+import com.hunter.huntermenu.HunterMenuMod;
+import com.mojang.blaze3d.platform.InputConstants;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
+import net.neoforged.neoforge.common.util.Lazy;
+import org.lwjgl.glfw.GLFW;
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+public class ClientEvents {
 
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: 'temurin'
+    public static final Lazy<KeyMapping> OPEN_MENU_KEY = Lazy.of(() -> new KeyMapping(
+            "key.huntermenu.open_menu",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_M,
+            "key.categories.huntermenu"
+    ));
 
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
+    @EventBusSubscriber(modid = HunterMenuMod.MOD_ID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+    public static class ModBusEvents {
+        @SubscribeEvent
+        public static void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
+            event.register(OPEN_MENU_KEY.get());
+        }
+    }
 
-      - name: Build with Gradle
-        run: ./gradlew build
-
-      - name: Upload Mod JAR
-        uses: actions/upload-artifact@v4
-        with:
-          name: huntermenu-mod
-          path: build/libs/*.jar
+    @EventBusSubscriber(modid = HunterMenuMod.MOD_ID, value = Dist.CLIENT)
+    public static class GameBusEvents {
+        @SubscribeEvent
+        public static void onClientTick(ClientTickEvent.Post event) {
+            while (OPEN_MENU_KEY.get().consumeClick()) {
+                Minecraft minecraft = Minecraft.getInstance();
+                if (minecraft.screen == null) {
+                    minecraft.setScreen(new HunterMenuScreen());
+                }
+            }
+        }
+    }
+}
