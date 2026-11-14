@@ -12,7 +12,6 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
-import net.neoforged.neoforge.event.entity.player.PlayerEvent.ItemPickupEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -98,11 +97,7 @@ public class HunterQuestEvents {
         PacketDistributor.sendToPlayer(player, new HunterQuestSyncPayload(progress));
     }
 
-    @SubscribeEvent
-    public static void onItemPickup(ItemPickupEvent event) {
-        if (!(event.getEntity() instanceof ServerPlayer player)) return;
-        processItemDiscovery(player, event.getStack());
-    }
+  
 
     @SubscribeEvent
     public static void onPlayerTick(PlayerTickEvent.Post event) {
