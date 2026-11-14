@@ -1,16 +1,19 @@
 package com.hunter.huntermenu.client;
 
 import com.hunter.huntermenu.quest.HunterQuest;
-import com.hunter.huntermenu.quest.HunterQuestAttachment.QuestProgress.GunStats;
 import com.hunter.huntermenu.quest.HunterQuestAttachment.QuestProgress;
+import com.hunter.huntermenu.quest.HunterQuestAttachment.QuestProgress.GunStats;
 import com.hunter.huntermenu.quest.HunterQuestRegistry;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -131,14 +134,13 @@ public class HunterMenuScreen extends Screen {
                 graphics.fill(x + 5, drawY - 2, x + w - 5, drawY + 10, 0x44FF9C1E);
             }
 
-            if (isWeapon) {
-                ItemStack stack = getStackForDisplay(id);
-                if (!stack.isEmpty()) {
-                    graphics.renderItem(stack, x + 10, drawY - 4);
-                }
+            ItemStack stack = getStackForDisplay(id, isWeapon);
+            if (!stack.isEmpty()) {
+                graphics.renderItem(stack, x + 10, drawY - 4);
             }
 
-            graphics.drawString(this.font, id, x + 30, drawY, COLOR_TEXT, false);
+            String displayName = getDisplayName(id);
+            graphics.drawString(this.font, displayName, x + 30, drawY, COLOR_TEXT, false);
             drawY += 20;
             if (drawY > y + h - 15) break;
         }
@@ -155,13 +157,42 @@ public class HunterMenuScreen extends Screen {
         }
     }
 
-    private ItemStack getStackForDisplay(String id) {
+    private String getDisplayName(String id) {
         if (id.startsWith("tacz:")) {
-            var item = BuiltInRegistries.ITEM.get(ResourceLocation.parse("tacz:modern_kinetic_gun"));
-            return new ItemStack(item);
+            return id.substring(5).replace('_', ' ').toUpperCase();
         }
-        var item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(id));
-        return new ItemStack(item);
+        if (id.startsWith("alexsmobs:")) {
+            String base = id.substring(10);
+            return base.substring(0, 1).toUpperCase() + base.substring(1).replace('_', ' ');
+        }
+        if (id.startsWith("minecraft:")) {
+            String base = id.substring(10);
+            return base.substring(0, 1).toUpperCase() + base.substring(1).replace('_', ' ');
+        }
+        return id;
+    }
+
+    private ItemStack getStackForDisplay(String id, boolean isWeapon) {
+        if (isWeapon && id.startsWith("tacz:")) {
+            ItemStack gunStack = new ItemStack(BuiltInRegistries.ITEM.get(ResourceLocation.parse("tacz:modern_kinetic_gun")));
+            CompoundTag tag = new CompoundTag();
+            tag.putString("GunId", id);
+            gunStack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
+            return gunStack;
+        }
+
+        if (!isWeapon && id.contains(":")) {
+            ResourceLocation eggId = ResourceLocation.parse(id + "_spawn_egg");
+            if (BuiltInRegistries.ITEM.containsKey(eggId)) {
+                return new ItemStack(BuiltInRegistries.ITEM.get(eggId));
+            }
+        }
+
+        ResourceLocation itemLoc = ResourceLocation.tryParse(id);
+        if (itemLoc != null && BuiltInRegistries.ITEM.containsKey(itemLoc)) {
+            return new ItemStack(BuiltInRegistries.ITEM.get(itemLoc));
+        }
+        return ItemStack.EMPTY;
     }
 
     @Override
