@@ -63,9 +63,9 @@ public class HunterQuestAttachment {
                         Codec.INT.fieldOf("total_kills").forGetter(p -> p.totalKills),
                         Codec.DOUBLE.fieldOf("best_distance").forGetter(p -> p.bestDistance),
                         Codec.INT.fieldOf("survivor_streak").forGetter(p -> p.survivorStreak),
-                        Codec.STRING.listOf().xmap(HashSet::new, java.util.ArrayList::new).fieldOf("discovered_animals").forGetter(p -> p.discoveredAnimals),
+                        Codec.STRING.listOf().xmap(HashSet::new, java.util.ArrayList::new).fieldOf("discovered_animals").forGetter(p -> new HashSet<>(p.discoveredAnimals)),
                         Codec.unboundedMap(Codec.STRING, GunStats.CODEC).fieldOf("gun_stats").forGetter(p -> p.gunStats),
-                        Codec.STRING.listOf().xmap(HashSet::new, java.util.ArrayList::new).fieldOf("discovered_melee").forGetter(p -> p.discoveredMelee)
+                        Codec.STRING.listOf().xmap(HashSet::new, java.util.ArrayList::new).fieldOf("discovered_melee").forGetter(p -> new HashSet<>(p.discoveredMelee))
                 ).apply(instance, QuestProgress::new)
         );
         public static final StreamCodec<FriendlyByteBuf, QuestProgress> STREAM_CODEC = StreamCodec.of(
