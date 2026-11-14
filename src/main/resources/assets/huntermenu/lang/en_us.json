@@ -1,0 +1,13 @@
+{
+  "itemGroup.huntermenu": "Example Mod Tab",
+  "block.huntermenu.example_block": "Example Block",
+  "item.huntermenu.example_item": "Example Item",
+
+  "huntermenu.configuration.title": "Hunter Menu Configs",
+  "huntermenu.configuration.section.huntermenu.common.toml": "Hunter Menu Configs",
+  "huntermenu.configuration.section.huntermenu.common.toml.title": "Hunter Menu Configs",
+  "huntermenu.configuration.items": "Item List",
+  "huntermenu.configuration.logDirtBlock": "Log Dirt Block",
+  "huntermenu.configuration.magicNumberIntroduction": "Magic Number Text",
+  "huntermenu.configuration.magicNumber": "Magic Number"
+}
