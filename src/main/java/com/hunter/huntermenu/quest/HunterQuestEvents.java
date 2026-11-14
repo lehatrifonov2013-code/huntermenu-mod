@@ -28,7 +28,7 @@ public class HunterQuestEvents {
 
         QuestProgress progress = QuestProgress.get(player);
 
-        boolean isAnimal = entity instanceof net.minecraft.world.entity.Animal;
+        boolean isAnimal = entity instanceof net.minecraft.world.entity.animal.Animal;
         String entityId = BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString();
 
         if (isAnimal) {
