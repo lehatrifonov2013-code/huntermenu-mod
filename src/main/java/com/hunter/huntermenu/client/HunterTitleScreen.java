@@ -3,9 +3,9 @@ package com.hunter.huntermenu.client;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.gui.screens.SelectWorldScreen;
 import net.minecraft.client.gui.screens.multiplayer.JoinMultiplayerScreen;
 import net.minecraft.client.gui.screens.options.OptionsScreen;
+import net.minecraft.client.gui.screens.worldselection.SelectWorldScreen;
 import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.client.gui.ModListScreen;
 
@@ -16,7 +16,6 @@ public class HunterTitleScreen extends Screen {
     private static final int COLOR_BG_BOTTOM = 0xFF0E120C;
     private static final int COLOR_LOGO_MAIN = 0xFFFFFFFF;
     private static final int COLOR_LOGO_ACCENT = 0xFFFF9C1E;
-    private static final int COLOR_LOGO_SUB = 0xFFB8B8A8;
     private static final int COLOR_DIVIDER = 0x55FF9C1E;
 
     // Кнопки
@@ -102,10 +101,6 @@ public class HunterTitleScreen extends Screen {
         return false;
     }
 
-    // ─────────────────────────────────────────────────────────────
-    // Кнопка в стиле theHunter: плоская, при hover — оранжевая полоса
-    // во всю ширину + текст сдвигается вправо и становится тёмным
-    // ─────────────────────────────────────────────────────────────
     private class HunterButton extends Button {
 
         HunterButton(int x, int y, int width, int height, Component message, OnPress onPress) {
