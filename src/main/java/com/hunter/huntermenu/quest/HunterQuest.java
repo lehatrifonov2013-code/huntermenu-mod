@@ -11,7 +11,9 @@ public record HunterQuest(
         Set<String> requiredGunIds,
         Set<String> requiredArmorIds,
         int requiredCount,
-        int rewardXp
+        int rewardXp,
+        String rewardItemId,
+        int rewardItemCount
 ) {
     public boolean hasDistanceRequirement() { return minDistance > 0.0D; }
     public boolean hasGunRequirement() { return !requiredGunIds.isEmpty(); }
