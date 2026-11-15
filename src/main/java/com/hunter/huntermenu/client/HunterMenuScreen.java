@@ -50,7 +50,7 @@ public class HunterMenuScreen extends Screen {
     private final List<String> meleeList = new ArrayList<>();
 
     private String selectedEntry = null;
-    private int scrollOffset = 0;
+    private int scrollOffset = 0;    private int mapZoomRadius = 48;
 
     private long animStartTime = 0L;
     private boolean closing = false;
@@ -243,7 +243,7 @@ public class HunterMenuScreen extends Screen {
     public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
     }
 
-    private void renderQuests(GuiGraphics graphics, int x, int y, int w, int h) {
+       private void renderQuests(GuiGraphics graphics, int x, int y, int w, int h) {
         QuestProgress progress = ClientQuestCache.get();
         graphics.enableScissor(x + 2, y + 2, x + w - 2, y + h - 2);
         int drawY = y + 8 - scrollOffset;
@@ -252,7 +252,7 @@ public class HunterMenuScreen extends Screen {
             boolean tracked = quest.id().equals(ClientEvents.trackedQuestId);
 
             if (tracked) {
-                graphics.fill(x + 6, drawY - 2, x + w - 6, drawY + 11, 0x33FF9C1E);
+                graphics.fill(x + 6, drawY - 2, x + w - 6, drawY + 21, 0x33FF9C1E);
             }
 
             int color = completed ? COLOR_ACCENT : (tracked ? 0xFFFFFFFF : COLOR_TEXT);
@@ -261,8 +261,12 @@ public class HunterMenuScreen extends Screen {
 
             graphics.drawString(this.font, prefix + quest.titleKey(), x + 10, drawY, color, false);
             graphics.drawString(this.font, status, x + w - 92, drawY, color, false);
-            drawY += 16;
+            graphics.drawString(this.font, quest.descriptionKey() + " (+" + quest.rewardXp() + " XP)", x + 14, drawY + 10, COLOR_TEXT_DIM, false);
+            drawY += 25;
         }
+        graphics.disableScissor();
+    }
+
         graphics.disableScissor();
     }
     private void renderCards(GuiGraphics graphics, List<String> list, int x, int y, int w, int h, boolean isWeapon) {
