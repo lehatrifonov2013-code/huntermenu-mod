@@ -3,10 +3,14 @@ package com.hunter.huntermenu.quest;
 import com.hunter.huntermenu.HunterMenuMod;
 import com.hunter.huntermenu.network.HunterQuestSyncPayload;
 import com.hunter.huntermenu.quest.HunterQuestAttachment.QuestProgress;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -27,7 +31,7 @@ public class HunterQuestEvents {
 
         QuestProgress progress = QuestProgress.get(player);
 
-        boolean isAnimal = entity instanceof net.minecraft.world.entity.animal.Animal;
+        boolean isAnimal = entity instanceof Animal;
         String entityId = BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString();
 
         if (isAnimal) {
@@ -37,26 +41,23 @@ public class HunterQuestEvents {
 
         double distance = player.distanceTo(entity);
         ItemStack weapon = player.getMainHandItem();
-        String itemId = BuiltInRegistries.ITEM.getKey(weapon.getItem()).toString();
+        String weaponKey = getWeaponKey(weapon);
         String gunId = getGunId(weapon);
 
-        boolean isSniper = gunId != null && HunterQuestRegistry.SNIPER_GUN_IDS.contains(gunId);
         boolean isMelee = event.getSource().getDirectEntity() == player;
 
         if (gunId != null && isAnimal) {
             progress.addGunKill(gunId, distance);
-        } else if (isMelee && isAnimal && !itemId.equals("minecraft:air")) {
-            progress.discoverMelee(itemId);
+        } else if (isMelee && isAnimal && weaponKey != null && !weaponKey.equals("minecraft:air")) {
+            progress.discoverMelee(weaponKey);
         }
-
-        boolean leveledUp = false;
 
         for (Map.Entry<String, HunterQuest> entry : HunterQuestRegistry.getAll().entrySet()) {
             HunterQuest quest = entry.getValue();
             if (progress.isCompleted(quest.id())) continue;
 
             if (quest.hasEntityRequirement() && !quest.targetEntityId().equals(entityId)) {
-                if (quest.id().equals("bird_hunter") && entityId.contains("toucan")) {
+                if (quest.id().equals("bird_hunter") && (entityId.contains("toucan") || entityId.contains("crow") || entityId.contains("seagull") || entityId.contains("bald_eagle"))) {
                     // ok
                 } else {
                     continue;
@@ -64,25 +65,37 @@ public class HunterQuestEvents {
             }
 
             if (quest.hasDistanceRequirement() && distance < quest.minDistance()) continue;
-            if (quest.hasGunRequirement() && !isSniper) continue;
 
-            if (quest.id().equals("melee_hunter") && !isMelee) continue;
-            if (quest.id().equals("night_hunter")) {
+            if (quest.hasGunRequirement()) {
+                if (gunId == null || !quest.requiredGunIds().contains(gunId)) continue;
+            }
+
+            if (quest.id().startsWith("gun_") && gunId == null) continue;
+            if (quest.id().startsWith("melee_") && !isMelee) continue;
+            if (quest.id().equals("close_range") && distance >= 5.0D) continue;
+
+            if (quest.id().startsWith("night_")) {
                 long time = player.level().getDayTime() % 24000L;
                 if (time < 13000L || time > 23000L) continue;
             }
-            if (quest.id().equals("survivor")) {
-                if (progress.getSurvivorStreak() >= 10) continue;
+
+            if (quest.id().equals("rain_1") && !player.level().isRaining()) continue;
+            if (quest.id().equals("storm_1") && !player.level().isThundering()) continue;
+
+            if (quest.id().startsWith("survivor")) {
                 progress.incrementSurvivorStreak();
                 if (progress.getSurvivorStreak() >= quest.requiredCount()) {
                     progress.incrementProgress(quest.id(), quest.requiredCount());
-                    leveledUp = true;
+                    if (progress.isCompleted(quest.id())) {
+                        giveQuestReward(player, quest);
+                    }
                 }
                 continue;
             }
+
             progress.incrementProgress(quest.id(), quest.requiredCount());
             if (progress.isCompleted(quest.id())) {
-                leveledUp = true;
+                giveQuestReward(player, quest);
             }
         }
 
@@ -90,14 +103,34 @@ public class HunterQuestEvents {
             progress.updateBestDistance(distance);
         }
 
-        if (leveledUp) {
-            player.giveExperiencePoints(10);
-        }
-
         PacketDistributor.sendToPlayer(player, new HunterQuestSyncPayload(progress));
     }
+    private static void giveQuestReward(ServerPlayer player, HunterQuest quest) {
+        if (quest.rewardXp() > 0) {
+            player.giveExperiencePoints(quest.rewardXp());
+        }
 
-  
+        String rewardName = "";
+        if (quest.rewardItemId() != null && !quest.rewardItemId().isEmpty() && quest.rewardItemCount() > 0) {
+            ResourceLocation loc = ResourceLocation.tryParse(quest.rewardItemId());
+            if (loc != null && BuiltInRegistries.ITEM.containsKey(loc)) {
+                ItemStack rewardStack = new ItemStack(BuiltInRegistries.ITEM.get(loc), quest.rewardItemCount());
+                rewardName = " + " + rewardStack.getHoverName().getString() + " x" + quest.rewardItemCount();
+                if (!player.getInventory().add(rewardStack)) {
+                    player.drop(rewardStack, false);
+                }
+            }
+        }
+
+        player.sendSystemMessage(
+                Component.literal("[HUNTERMATE] ")
+                        .withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD)
+                        .append(Component.literal("Контракт выполнен: " + quest.titleKey())
+                                .withStyle(ChatFormatting.YELLOW))
+                        .append(Component.literal(" (+" + quest.rewardXp() + " XP" + rewardName + ")")
+                                .withStyle(ChatFormatting.GREEN))
+        );
+    }
 
     @SubscribeEvent
     public static void onPlayerTick(PlayerTickEvent.Post event) {
@@ -122,10 +155,13 @@ public class HunterQuestEvents {
                 progress.unlockGun(gunId);
                 changed = true;
             }
-        } else if (itemId.contains("sword") || itemId.contains("axe") || itemId.contains("knife") || itemId.contains("dagger") || itemId.contains("blade")) {
-            if (!progress.getDiscoveredMelee().contains(itemId)) {
-                progress.discoverMelee(itemId);
-                changed = true;
+        } else {
+            String meleeKey = getWeaponKey(stack);
+            if (meleeKey != null && (meleeKey.startsWith("lrtactical:") || itemId.contains("sword") || itemId.contains("axe") || itemId.contains("knife") || itemId.contains("dagger") || itemId.contains("blade"))) {
+                if (!progress.getDiscoveredMelee().contains(meleeKey)) {
+                    progress.discoverMelee(meleeKey);
+                    changed = true;
+                }
             }
         }
 
@@ -167,5 +203,20 @@ public class HunterQuestEvents {
             return gunId.isEmpty() ? null : gunId;
         }
         return null;
+    }
+
+    private static String getWeaponKey(ItemStack stack) {
+        if (stack.isEmpty()) return null;
+        String itemId = BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
+        if (itemId.equals("lrtactical:melee")) {
+            var customData = stack.get(DataComponents.CUSTOM_DATA);
+            if (customData != null) {
+                String meleeId = customData.copyTag().getString("MeleeWeaponId");
+                if (!meleeId.isEmpty()) {
+                    return meleeId.contains(":") ? meleeId : "lrtactical:" + meleeId;
+                }
+            }
+        }
+        return itemId;
     }
 }
